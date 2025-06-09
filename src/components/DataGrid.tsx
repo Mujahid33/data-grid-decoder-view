@@ -1,9 +1,9 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { ArrowUp, ArrowDown, Search, Filter } from 'lucide-react';
+import { ArrowUp, ArrowDown, Search } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -27,7 +27,6 @@ const DataGrid: React.FC<DataGridProps> = ({ data, headers }) => {
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
-  const [showFilters, setShowFilters] = useState(false);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -133,59 +132,22 @@ const DataGrid: React.FC<DataGridProps> = ({ data, headers }) => {
             Data Grid
             <Badge variant="secondary">{filteredAndSortedData.length} rows</Badge>
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-1"
-            >
-              <Filter className="h-4 w-4" />
-              Filters
-              {activeFiltersCount > 0 && (
-                <Badge variant="destructive" className="ml-1 h-5 w-5 p-0 text-xs">
-                  {activeFiltersCount}
-                </Badge>
-              )}
+          {activeFiltersCount > 0 && (
+            <Button variant="outline" size="sm" onClick={clearAllFilters}>
+              Clear All Filters
             </Button>
-            {activeFiltersCount > 0 && (
-              <Button variant="outline" size="sm" onClick={clearAllFilters}>
-                Clear All
-              </Button>
-            )}
-          </div>
+          )}
         </div>
         
-        <div className="space-y-4">
-          {/* Global Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search across all columns..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          {/* Column Filters */}
-          {showFilters && (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {headers.map((header) => (
-                <div key={header} className="space-y-1">
-                  <Label htmlFor={`filter-${header}`} className="text-xs font-medium">
-                    Filter {header}
-                  </Label>
-                  <Input
-                    id={`filter-${header}`}
-                    placeholder={`Filter by ${header}...`}
-                    value={columnFilters[header] || ''}
-                    onChange={(e) => handleColumnFilter(header, e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+        {/* Global Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search across all columns..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
         </div>
       </CardHeader>
       
@@ -193,6 +155,22 @@ const DataGrid: React.FC<DataGridProps> = ({ data, headers }) => {
         <div className="rounded-md border overflow-auto">
           <Table>
             <TableHeader>
+              {/* Column Filters Row */}
+              <TableRow>
+                <TableHead className="w-8"></TableHead>
+                {headers.map((header) => (
+                  <TableHead key={`filter-${header}`} className="p-2">
+                    <Input
+                      placeholder={`Filter ${header}...`}
+                      value={columnFilters[header] || ''}
+                      onChange={(e) => handleColumnFilter(header, e.target.value)}
+                      className="h-8 text-xs"
+                    />
+                  </TableHead>
+                ))}
+              </TableRow>
+              
+              {/* Column Headers Row */}
               <TableRow>
                 <TableHead className="w-8"></TableHead>
                 {headers.map((header) => (
