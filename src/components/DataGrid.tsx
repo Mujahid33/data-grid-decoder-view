@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import ExpandableRow from './ExpandableRow';
 
 interface DataGridProps {
   data: any[];
@@ -81,8 +81,8 @@ const DataGrid: React.FC<DataGridProps> = ({ data, headers }) => {
         const bValue = b[sortColumn] || '';
         
         // Try to parse as numbers for proper numeric sorting
-        const aNum = parseFloat(aValue);
-        const bNum = parseFloat(bValue);
+        const aNum = parseFloat(String(aValue));
+        const bNum = parseFloat(String(bValue));
         
         if (!isNaN(aNum) && !isNaN(bNum)) {
           return sortDirection === 'asc' ? aNum - bNum : bNum - aNum;
@@ -194,6 +194,7 @@ const DataGrid: React.FC<DataGridProps> = ({ data, headers }) => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-8"></TableHead>
                 {headers.map((header) => (
                   <TableHead
                     key={header}
@@ -210,13 +211,12 @@ const DataGrid: React.FC<DataGridProps> = ({ data, headers }) => {
             </TableHeader>
             <TableBody>
               {filteredAndSortedData.map((row, index) => (
-                <TableRow key={index} className="hover:bg-muted/50">
-                  {headers.map((header) => (
-                    <TableCell key={header} className="max-w-xs truncate">
-                      {String(row[header] || '')}
-                    </TableCell>
-                  ))}
-                </TableRow>
+                <ExpandableRow
+                  key={index}
+                  row={row}
+                  headers={headers}
+                  rowIndex={index}
+                />
               ))}
             </TableBody>
           </Table>

@@ -21,7 +21,7 @@ const Index = () => {
             XML/JSON Data Parser
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Parse and visualize your XML or JSON data with powerful filtering, searching, and sorting capabilities
+            Parse and visualize your XML or JSON data with powerful filtering, searching, sorting, and nested object expansion capabilities
           </p>
         </div>
 
@@ -41,31 +41,65 @@ const Index = () => {
         {parsedData.length === 0 && (
           <div className="max-w-4xl mx-auto">
             <div className="rounded-lg border bg-card p-6">
-              <h3 className="text-lg font-semibold mb-4">Try Sample Data</h3>
+              <h3 className="text-lg font-semibold mb-4">Try Sample Data with Nested Objects</h3>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <h4 className="font-medium">Sample JSON:</h4>
+                  <h4 className="font-medium">Sample JSON with nested objects:</h4>
                   <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
 {`[
-  {"name": "John Doe", "age": 30, "city": "New York"},
-  {"name": "Jane Smith", "age": 25, "city": "Los Angeles"},
-  {"name": "Bob Johnson", "age": 35, "city": "Chicago"}
+  {
+    "name": "John Doe",
+    "age": 30,
+    "contact": {
+      "email": "john@example.com",
+      "phone": "555-0123"
+    },
+    "address": {
+      "street": "123 Main St",
+      "city": "New York",
+      "country": "USA"
+    }
+  },
+  {
+    "name": "Jane Smith",
+    "age": 25,
+    "contact": {
+      "email": "jane@example.com",
+      "phone": "555-0456"
+    },
+    "address": {
+      "street": "456 Oak Ave",
+      "city": "Los Angeles",
+      "country": "USA"
+    }
+  }
 ]`}
                   </pre>
                 </div>
                 <div className="space-y-2">
-                  <h4 className="font-medium">Sample XML:</h4>
+                  <h4 className="font-medium">Sample XML with nested elements:</h4>
                   <pre className="text-xs bg-muted p-3 rounded overflow-x-auto">
 {`<employees>
   <employee>
     <name>John Doe</name>
     <age>30</age>
-    <city>New York</city>
+    <contact>
+      <email>john@example.com</email>
+      <phone>555-0123</phone>
+    </contact>
+    <address>
+      <street>123 Main St</street>
+      <city>New York</city>
+      <country>USA</country>
+    </address>
   </employee>
   <employee>
     <name>Jane Smith</name>
     <age>25</age>
-    <city>Los Angeles</city>
+    <contact>
+      <email>jane@example.com</email>
+      <phone>555-0456</phone>
+    </contact>
   </employee>
 </employees>`}
                   </pre>

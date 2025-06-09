@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,20 +35,34 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
       throw new Error('No data found in XML');
     }
 
-    childElements.forEach((element) => {
-      const row: any = {};
-      Array.from(element.children).forEach((child) => {
-        row[child.tagName] = child.textContent || '';
+    const parseElement = (element: Element): any => {
+      const result: any = {};
+      
+      // Handle child elements
+      const children = Array.from(element.children);
+      children.forEach((child) => {
+        const childElement = child as Element;
+        if (childElement.children.length > 0) {
+          // Nested element - recursively parse
+          result[childElement.tagName] = parseElement(childElement);
+        } else {
+          // Simple element
+          result[childElement.tagName] = childElement.textContent || '';
+        }
       });
       
       // If no children, use attributes
-      if (Object.keys(row).length === 0) {
+      if (Object.keys(result).length === 0) {
         Array.from(element.attributes).forEach((attr) => {
-          row[attr.name] = attr.value;
+          result[attr.name] = attr.value;
         });
       }
       
-      data.push(row);
+      return result;
+    };
+
+    childElements.forEach((element) => {
+      data.push(parseElement(element as Element));
     });
 
     return data;
@@ -74,15 +87,47 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
     }
   };
 
+  const flattenObject = (obj: any, prefix = ''): any => {
+    const flattened: any = {};
+    
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const newKey = prefix ? `${prefix}.${key}` : key;
+        
+        if (obj[key] !== null && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+          // Nested object - flatten it
+          Object.assign(flattened, flattenObject(obj[key], newKey));
+        } else {
+          // Simple value or array
+          flattened[newKey] = obj[key];
+        }
+      }
+    }
+    
+    return flattened;
+  };
+
   const extractHeaders = (data: any[]): string[] => {
     if (data.length === 0) return [];
     
     const headers = new Set<string>();
     data.forEach(row => {
-      Object.keys(row).forEach(key => headers.add(key));
+      const flattened = flattenObject(row);
+      Object.keys(flattened).forEach(key => headers.add(key));
     });
     
     return Array.from(headers);
+  };
+
+  const processDataForGrid = (data: any[]): any[] => {
+    return data.map(row => {
+      const processed = { ...row };
+      // Keep original nested structure for expansion
+      processed._originalData = row;
+      // Add flattened version for main display
+      Object.assign(processed, flattenObject(row));
+      return processed;
+    });
   };
 
   const handleParse = async (inputData: string) => {
@@ -113,8 +158,9 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
         throw new Error('No data found in the provided input');
       }
 
+      const processedData = processDataForGrid(parsedData);
       const headers = extractHeaders(parsedData);
-      onDataParsed(parsedData, headers);
+      onDataParsed(processedData, headers);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to parse data');
