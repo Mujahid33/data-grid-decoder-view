@@ -181,7 +181,6 @@ const DataGrid: React.FC<DataGridProps> = ({ data, headers }) => {
                     placeholder={`Filter by ${header}...`}
                     value={columnFilters[header] || ''}
                     onChange={(e) => handleColumnFilter(header, e.target.value)}
-                    size="sm"
                   />
                 </div>
               ))}

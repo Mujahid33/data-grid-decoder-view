@@ -20,7 +20,7 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
 
   const parseXML = (xmlString: string): any[] => {
     const parser = new DOMParser();
-    const xmlDoc = parser.parseXML(xmlString);
+    const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
     
     if (xmlDoc.querySelector('parsererror')) {
       throw new Error('Invalid XML format');
