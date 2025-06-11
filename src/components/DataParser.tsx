@@ -323,7 +323,7 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
           </Alert>
         )}
       </CardContent>
-    </div>
+    </Card>
   );
 };
 
