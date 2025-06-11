@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,14 +41,33 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
       
       // Handle child elements
       const children = Array.from(element.children);
+      const groupedChildren: Record<string, Element[]> = {};
+      
+      // Group children by tag name to detect arrays
       children.forEach((child) => {
         const childElement = child as Element;
-        if (childElement.children.length > 0) {
-          // Nested element - recursively parse
-          result[childElement.tagName] = parseElement(childElement);
+        const tagName = childElement.tagName;
+        if (!groupedChildren[tagName]) {
+          groupedChildren[tagName] = [];
+        }
+        groupedChildren[tagName].push(childElement);
+      });
+      
+      // Process grouped children
+      Object.entries(groupedChildren).forEach(([tagName, elements]) => {
+        if (elements.length > 1) {
+          // Multiple elements with same tag name - create array
+          result[tagName] = elements.map(el => parseElement(el));
         } else {
-          // Simple element
-          result[childElement.tagName] = childElement.textContent || '';
+          // Single element
+          const element = elements[0];
+          if (element.children.length > 0) {
+            // Nested element - recursively parse
+            result[tagName] = parseElement(element);
+          } else {
+            // Simple element
+            result[tagName] = element.textContent || '';
+          }
         }
       });
       
@@ -96,11 +114,14 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
       if (obj.hasOwnProperty(key)) {
         const newKey = prefix ? `${prefix}.${key}` : key;
         
-        if (obj[key] !== null && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+        if (Array.isArray(obj[key])) {
+          // Keep arrays as summary for main table, but preserve original
+          flattened[newKey] = `[${obj[key].length} items]`;
+        } else if (obj[key] !== null && typeof obj[key] === 'object') {
           // Nested object - flatten it
           Object.assign(flattened, flattenObject(obj[key], newKey));
         } else {
-          // Simple value or array
+          // Simple value
           flattened[newKey] = obj[key];
         }
       }

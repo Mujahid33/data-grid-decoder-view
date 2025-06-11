@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { TableCell, TableRow } from '@/components/ui/table';
+import { TableCell, TableRow, Table, TableBody, TableHead, TableHeader } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import {
   Accordion,
@@ -21,7 +21,7 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({ row, headers, rowIndex })
 
   const hasNestedData = (obj: any): boolean => {
     return Object.values(obj).some(value => 
-      value !== null && typeof value === 'object' && !Array.isArray(value)
+      value !== null && (typeof value === 'object' || Array.isArray(value))
     );
   };
 
@@ -29,7 +29,7 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({ row, headers, rowIndex })
     const nested: Record<string, any> = {};
     
     Object.entries(obj).forEach(([key, value]) => {
-      if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      if (value !== null && (typeof value === 'object' || Array.isArray(value))) {
         nested[key] = value;
       }
     });
@@ -45,6 +45,78 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({ row, headers, rowIndex })
       return `{${Object.keys(value).length} fields}`;
     }
     return String(value || '');
+  };
+
+  const renderNestedArray = (array: any[], fieldName: string) => {
+    if (!Array.isArray(array) || array.length === 0) return null;
+
+    // Check if array contains objects to create a proper table
+    const firstItem = array[0];
+    if (typeof firstItem === 'object' && firstItem !== null && !Array.isArray(firstItem)) {
+      // Get all unique keys from all objects in the array
+      const nestedHeaders = new Set<string>();
+      array.forEach(item => {
+        if (typeof item === 'object' && item !== null) {
+          Object.keys(item).forEach(key => nestedHeaders.add(key));
+        }
+      });
+      
+      const headerArray = Array.from(nestedHeaders);
+
+      return (
+        <div className="mt-2 border rounded-lg overflow-hidden">
+          <div className="bg-muted/50 px-3 py-2 text-sm font-medium">
+            {fieldName} ({array.length} items)
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {headerArray.map((header) => (
+                  <TableHead key={header} className="text-xs font-medium">
+                    {header}
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {array.map((item, index) => (
+                <TableRow key={index} className="text-xs">
+                  {headerArray.map((header) => (
+                    <TableCell key={header} className="py-2 px-3">
+                      {Array.isArray(item[header]) ? (
+                        <span className="text-muted-foreground">
+                          [{item[header].length} items]
+                        </span>
+                      ) : typeof item[header] === 'object' && item[header] !== null ? (
+                        <span className="text-muted-foreground">
+                          {JSON.stringify(item[header])}
+                        </span>
+                      ) : (
+                        String(item[header] || '')
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
+    }
+
+    // For simple arrays, show as a list
+    return (
+      <div className="mt-2">
+        <div className="text-sm font-medium mb-2">{fieldName} ({array.length} items):</div>
+        <div className="grid gap-1 max-h-32 overflow-y-auto">
+          {array.map((item, index) => (
+            <div key={index} className="text-xs bg-muted/30 px-2 py-1 rounded">
+              {String(item)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const originalData = row._originalData || row;
@@ -89,13 +161,19 @@ const ExpandableRow: React.FC<ExpandableRowProps> = ({ row, headers, rowIndex })
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="space-y-2">
-                      {typeof fieldValue === 'object' && fieldValue !== null ? (
+                      {Array.isArray(fieldValue) ? (
+                        renderNestedArray(fieldValue, fieldName)
+                      ) : typeof fieldValue === 'object' && fieldValue !== null ? (
                         <div className="grid gap-2">
                           {Object.entries(fieldValue).map(([subKey, subValue]) => (
                             <div key={subKey} className="flex justify-between py-1 border-b border-muted">
                               <span className="font-medium text-sm">{subKey}:</span>
                               <span className="text-sm text-muted-foreground">
-                                {renderNestedValue(subValue)}
+                                {Array.isArray(subValue) ? (
+                                  <span>[{subValue.length} items]</span>
+                                ) : (
+                                  renderNestedValue(subValue)
+                                )}
                               </span>
                             </div>
                           ))}
