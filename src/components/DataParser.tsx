@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, FileText, AlertCircle } from 'lucide-react';
+import { Upload, FileText, AlertCircle, Globe } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface DataParserProps {
@@ -14,6 +15,7 @@ interface DataParserProps {
 
 const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
   const [textInput, setTextInput] = useState('');
+  const [urlInput, setUrlInput] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -130,6 +132,30 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
     });
   };
 
+  const fetchDataFromUrl = async (url: string): Promise<string> => {
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        // For JSON responses, get the text to parse it ourselves
+        return await response.text();
+      } else {
+        // For XML or other text responses
+        return await response.text();
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        throw new Error(`Failed to fetch data from URL: ${err.message}`);
+      }
+      throw new Error('Failed to fetch data from URL');
+    }
+  };
+
   const handleParse = async (inputData: string) => {
     if (!inputData.trim()) {
       setError('Please provide data to parse');
@@ -185,6 +211,24 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
     handleParse(textInput);
   };
 
+  const handleUrlParse = async () => {
+    if (!urlInput.trim()) {
+      setError('Please provide a URL to fetch data from');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const data = await fetchDataFromUrl(urlInput.trim());
+      await handleParse(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data from URL');
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -195,9 +239,10 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="text" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="text">Paste Data</TabsTrigger>
             <TabsTrigger value="file">Upload File</TabsTrigger>
+            <TabsTrigger value="url">Fetch from URL</TabsTrigger>
           </TabsList>
           
           <TabsContent value="text" className="space-y-4">
@@ -243,6 +288,32 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
               </div>
             </div>
           </TabsContent>
+
+          <TabsContent value="url" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="url-input">Enter URL to fetch XML or JSON data:</Label>
+              <div className="flex items-center justify-center w-full">
+                <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg p-4">
+                  <Globe className="w-8 h-8 mb-2 text-gray-400" />
+                  <Input
+                    id="url-input"
+                    type="url"
+                    placeholder="https://api.example.com/data.json"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    className="w-full mb-2"
+                  />
+                  <Button 
+                    onClick={handleUrlParse} 
+                    disabled={isLoading || !urlInput.trim()}
+                    className="w-full"
+                  >
+                    {isLoading ? 'Fetching...' : 'Fetch and Parse Data'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
 
         {error && (
@@ -252,7 +323,7 @@ const DataParser: React.FC<DataParserProps> = ({ onDataParsed }) => {
           </Alert>
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 };
 
